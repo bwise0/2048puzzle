@@ -1,0 +1,5 @@
+{
+  "name": "네온 2048 퍼즐",
+  "description": "HTML5 Canvas로 제작된 세련되고 터치에 최적화된 2048 스타일 퍼즐 게임입니다.",
+  "requestFramePermissions": []
+}

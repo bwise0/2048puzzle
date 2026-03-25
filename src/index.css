@@ -1,0 +1,15 @@
+@import "tailwindcss";
+
+html, body {
+  overscroll-behavior: none;
+  height: 100%;
+  overflow: hidden;
+  position: fixed;
+  width: 100%;
+}
+
+body {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
