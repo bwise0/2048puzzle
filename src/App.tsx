@@ -69,8 +69,8 @@ export default function App() {
   const [win, setWin] = useState(false);
   const [nextId, setNextId] = useState(0);
 
-  // Touch handling
-  const touchStart = useRef<Position | null>(null);
+  // Touch and Mouse handling
+  const dragStart = useRef<Position | null>(null);
 
   // --- Game Logic ---
   const spawnTile = useCallback((currentTiles: Tile[]) => {
@@ -308,18 +308,14 @@ export default function App() {
   }, [tiles]);
 
   // --- Event Handlers ---
-  const handleTouchStart = useCallback((e: TouchEvent) => {
-    touchStart.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+  const handleDragStart = useCallback((x: number, y: number) => {
+    dragStart.current = { x, y };
   }, []);
 
-  const handleTouchMove = useCallback((e: TouchEvent) => {
-    if (e.cancelable) e.preventDefault();
-  }, []);
-
-  const handleTouchEnd = useCallback((e: TouchEvent) => {
-    if (!touchStart.current) return;
-    const dx = e.changedTouches[0].clientX - touchStart.current.x;
-    const dy = e.changedTouches[0].clientY - touchStart.current.y;
+  const handleDragEnd = useCallback((x: number, y: number) => {
+    if (!dragStart.current) return;
+    const dx = x - dragStart.current.x;
+    const dy = y - dragStart.current.y;
     const absX = Math.abs(dx);
     const absY = Math.abs(dy);
 
@@ -330,24 +326,50 @@ export default function App() {
         move(dy > 0 ? 'down' : 'up');
       }
     }
-    touchStart.current = null;
+    dragStart.current = null;
   }, [move]);
+
+  const onTouchStart = useCallback((e: TouchEvent) => {
+    handleDragStart(e.touches[0].clientX, e.touches[0].clientY);
+  }, [handleDragStart]);
+
+  const onTouchMove = useCallback((e: TouchEvent) => {
+    if (e.cancelable) e.preventDefault();
+  }, []);
+
+  const onTouchEnd = useCallback((e: TouchEvent) => {
+    handleDragEnd(e.changedTouches[0].clientX, e.changedTouches[0].clientY);
+  }, [handleDragEnd]);
+
+  const onMouseDown = useCallback((e: MouseEvent) => {
+    handleDragStart(e.clientX, e.clientY);
+  }, [handleDragStart]);
+
+  const onMouseUp = useCallback((e: MouseEvent) => {
+    handleDragEnd(e.clientX, e.clientY);
+  }, [handleDragEnd]);
 
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
 
-    // Attach non-passive listeners to prevent default iOS behavior
-    container.addEventListener('touchstart', handleTouchStart, { passive: false });
-    container.addEventListener('touchmove', handleTouchMove, { passive: false });
-    container.addEventListener('touchend', handleTouchEnd, { passive: false });
+    // Touch events
+    container.addEventListener('touchstart', onTouchStart, { passive: false });
+    container.addEventListener('touchmove', onTouchMove, { passive: false });
+    container.addEventListener('touchend', onTouchEnd, { passive: false });
+
+    // Mouse events
+    container.addEventListener('mousedown', onMouseDown);
+    window.addEventListener('mouseup', onMouseUp);
 
     return () => {
-      container.removeEventListener('touchstart', handleTouchStart);
-      container.removeEventListener('touchmove', handleTouchMove);
-      container.removeEventListener('touchend', handleTouchEnd);
+      container.removeEventListener('touchstart', onTouchStart);
+      container.removeEventListener('touchmove', onTouchMove);
+      container.removeEventListener('touchend', onTouchEnd);
+      container.removeEventListener('mousedown', onMouseDown);
+      window.removeEventListener('mouseup', onMouseUp);
     };
-  }, [handleTouchStart, handleTouchMove, handleTouchEnd]);
+  }, [onTouchStart, onTouchMove, onTouchEnd, onMouseDown, onMouseUp]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
